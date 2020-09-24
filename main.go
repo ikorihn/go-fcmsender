@@ -50,6 +50,12 @@ func main() {
 			Usage:    "body for the massage",
 			Required: true,
 		},
+		&cli.StringFlag{
+			Name:     "service",
+			Aliases:  []string{"s"},
+			Usage:    "service to send",
+			Required: true,
+		},
 		&cli.StringSliceFlag{
 			Name:    "option",
 			Aliases: []string{"o"},
@@ -81,7 +87,7 @@ func exec(c *cli.Context, conf config) error {
 	}
 	fmt.Printf("OPTIONS: %v\n", opt)
 
-	fmt.Printf("CONFIG: %+v\n", conf)
+	fmt.Printf("CONFIG: %+v\n", conf.Services[c.String("service")].CollapseKey)
 	/*
 		ctx := context.Background()
 		client, err := makeClient(ctx)
