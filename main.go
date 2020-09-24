@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -21,16 +22,23 @@ func main() {
 		},
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "title",
-				Aliases: []string{"t"},
-				Value:   "タイトル",
-				Usage:   "title for the massage",
+				Name:     "title",
+				Aliases:  []string{"t"},
+				Value:    "タイトル",
+				Usage:    "title for the massage",
+				Required: true,
 			},
 			&cli.StringFlag{
-				Name:    "body",
-				Aliases: []string{"b"},
-				Value:   "メッセージ",
-				Usage:   "body for the massage",
+				Name:     "body",
+				Aliases:  []string{"b"},
+				Value:    "メッセージ",
+				Usage:    "body for the massage",
+				Required: true,
+			},
+			&cli.StringSliceFlag{
+				Name:    "option",
+				Aliases: []string{"o"},
+				Usage:   "option array key=value",
 			},
 		},
 	}
@@ -39,48 +47,61 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func exec(c *cli.Context) error {
-	ctx := context.Background()
-	client, err := makeClient(ctx)
-	if err != nil {
-		return err
+	title := c.String("title")
+	body := c.String("body")
+	options := c.StringSlice("option")
+
+	fmt.Printf("TITLE: %v\n", title)
+	fmt.Printf("BODY: %v\n", body)
+	opt := map[string]string{}
+	for _, v := range options {
+		keyValue := strings.Split(v, "=")
+		key, value := keyValue[0], keyValue[1]
+		fmt.Printf("key: %v, value: %v\n", key, value)
+		opt[key] = value
 	}
+	fmt.Printf("OPTIONS: %v\n", opt)
 
-	title := "title"
-	body := "body"
-
-	orgTokenList := []string{
-		"TOKEN1",
-		"TOKEN2",
-	}
-
-	for _, tokenList := range chunkSlice(orgTokenList, 500) {
-		message := makeMessage(title, body, tokenList)
-
-		br, err := client.SendMulticast(context.Background(), message)
+	/*
+		ctx := context.Background()
+		client, err := makeClient(ctx)
 		if err != nil {
-			log.Fatalln(err)
 			return err
 		}
 
-		if br.FailureCount > 0 {
-			var failedTokens []string
-			for idx, resp := range br.Responses {
-				if !resp.Success {
-					// The order of responses corresponds to the order of the registration tokens.
-					failedTokens = append(failedTokens, tokenList[idx])
-				}
-			}
-			fmt.Printf("List of tokens that caused failures: %v\n", failedTokens)
+		orgTokenList := []string{
+			"TOKEN1",
+			"TOKEN2",
 		}
 
-		// See the BatchResponse reference documentation
-		// for the contents of response.
-		fmt.Printf("%d messages were sent successfully\n", br.SuccessCount)
-	}
+		for _, tokenList := range chunkSlice(orgTokenList, 500) {
+			message := makeMessage(title, body, tokenList)
+
+			br, err := client.SendMulticast(context.Background(), message)
+			if err != nil {
+				log.Fatalln(err)
+				return err
+			}
+
+			if br.FailureCount > 0 {
+				var failedTokens []string
+				for idx, resp := range br.Responses {
+					if !resp.Success {
+						// The order of responses corresponds to the order of the registration tokens.
+						failedTokens = append(failedTokens, tokenList[idx])
+					}
+				}
+				fmt.Printf("List of tokens that caused failures: %v\n", failedTokens)
+			}
+
+			// See the BatchResponse reference documentation
+			// for the contents of response.
+			fmt.Printf("%d messages were sent successfully\n", br.SuccessCount)
+		}
+	*/
 
 	return nil
 }
