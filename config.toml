@@ -1,0 +1,5 @@
+[services]
+[services.a]
+collapse_key = "notification_a"
+[services.b]
+collapse_key = "notification_b"

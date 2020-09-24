@@ -9,8 +9,17 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
+	"github.com/BurntSushi/toml"
 	"github.com/urfave/cli/v2"
 )
+
+type config struct {
+	Services map[string]service `toml:"services"`
+}
+
+type service struct {
+	CollapseKey string `toml:"collapse_key"`
+}
 
 func main() {
 
@@ -18,30 +27,37 @@ func main() {
 		Name:  "push sender",
 		Usage: "",
 		Action: func(c *cli.Context) error {
-			return exec(c)
-		},
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "title",
-				Aliases:  []string{"t"},
-				Value:    "タイトル",
-				Usage:    "title for the massage",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "body",
-				Aliases:  []string{"b"},
-				Value:    "メッセージ",
-				Usage:    "body for the massage",
-				Required: true,
-			},
-			&cli.StringSliceFlag{
-				Name:    "option",
-				Aliases: []string{"o"},
-				Usage:   "option array key=value",
-			},
+			var conf config
+			if _, err := toml.DecodeFile("config.toml", &conf); err != nil {
+				return err
+			}
+			return exec(c, conf)
 		},
 	}
+
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:     "title",
+			Aliases:  []string{"t"},
+			Value:    "タイトル",
+			Usage:    "title for the massage",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "body",
+			Aliases:  []string{"b"},
+			Value:    "メッセージ",
+			Usage:    "body for the massage",
+			Required: true,
+		},
+		&cli.StringSliceFlag{
+			Name:    "option",
+			Aliases: []string{"o"},
+			Usage:   "option array key=value",
+		},
+	}
+
+	app.Flags = flags
 
 	err := app.Run(os.Args)
 	if err != nil {
@@ -49,7 +65,7 @@ func main() {
 	}
 }
 
-func exec(c *cli.Context) error {
+func exec(c *cli.Context, conf config) error {
 	title := c.String("title")
 	body := c.String("body")
 	options := c.StringSlice("option")
@@ -65,6 +81,7 @@ func exec(c *cli.Context) error {
 	}
 	fmt.Printf("OPTIONS: %v\n", opt)
 
+	fmt.Printf("CONFIG: %+v\n", conf)
 	/*
 		ctx := context.Background()
 		client, err := makeClient(ctx)
