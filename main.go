@@ -4,16 +4,49 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
+
+	app := &cli.App{
+		Name:  "push sender",
+		Usage: "",
+		Action: func(c *cli.Context) error {
+			return exec(c)
+		},
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "title",
+				Aliases: []string{"t"},
+				Value:   "タイトル",
+				Usage:   "title for the massage",
+			},
+			&cli.StringFlag{
+				Name:    "body",
+				Aliases: []string{"b"},
+				Value:   "メッセージ",
+				Usage:   "body for the massage",
+			},
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func exec(c *cli.Context) error {
 	ctx := context.Background()
 	client, err := makeClient(ctx)
 	if err != nil {
-		return
+		return err
 	}
 
 	title := "title"
@@ -30,6 +63,7 @@ func main() {
 		br, err := client.SendMulticast(context.Background(), message)
 		if err != nil {
 			log.Fatalln(err)
+			return err
 		}
 
 		if br.FailureCount > 0 {
@@ -47,6 +81,8 @@ func main() {
 		// for the contents of response.
 		fmt.Printf("%d messages were sent successfully\n", br.SuccessCount)
 	}
+
+	return nil
 }
 
 func makeClient(ctx context.Context) (*messaging.Client, error) {
